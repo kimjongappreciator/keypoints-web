@@ -8,9 +8,9 @@ from flask import jsonify, render_template
 from flask_socketio import SocketIO, send
 from datetime import datetime
 
-model = tf.keras.models.load_model('my_model2.keras')
+model = tf.keras.models.load_model('my_model3.keras')
 
-actions = np.array(['hola', 'jugar', 'a', 'e', 'gracias', 'ir','yo', 'neutral','tu','donde', 'dias', 'adios', 'nombre', 'de nada'])
+actions = np.array(['hola', 'jugar', 'a', 'e', 'gracias', 'ir','yo', 'neutral','tu','donde', 'dias', 'adios', 'nombre', 'de nada', 'ordenar', 'guardar'])
 mp_holistic = mp.solutions.holistic
 mp_drawing = mp.solutions.drawing_utils
 
