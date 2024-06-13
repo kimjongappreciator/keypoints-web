@@ -1,12 +1,16 @@
 import tensorflow as tf
-from flask import Flask, request
+from flask import Flask
 import numpy as np
 import mediapipe as mp
 import cv2
 import base64
 from flask import jsonify, render_template
-from flask_socketio import SocketIO, send
+from flask_socketio import SocketIO
 from datetime import datetime
+import database as dbase
+from flask import request
+from flask import request
+from flask import request
 
 model = tf.keras.models.load_model('my_model3.keras')
 
@@ -49,7 +53,8 @@ holistic =  mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_conf
 app = Flask(__name__)
 socketio = SocketIO(app)
 socketio.init_app(app, cors_allowed_origins="*")
-
+db = dbase.dbConnection()
+collection = db["translation_log"]
 
 frames = []
 sequence = []
@@ -64,6 +69,21 @@ def on_connect():
 def index():
     return render_template("index.html")
 
+@app.route("/write", methods=["POST"])
+def add_translation():
+    datosjson = request.get_json()
+    collection.insert_one(datosjson)
+    return jsonify({"message": "Transaccion guardada"})
+
+@app.route("/read", methods=["GET"])
+def get_translations():
+    datos = []
+    result = collection.find()
+    for res in result:
+        res['_id'] = str(res['_id'])
+        datos.append(res)
+    return jsonify({"translations": datos})
+
 @socketio.on("message")
 def on_message(data):   
    
@@ -77,7 +97,7 @@ def on_message(data):
     
     image, results = mediapipe_detection(frame, holistic)
     keypoints = extract_keypoints(results)
-    print(keypoints)
+    #print(keypoints)
     sequence.append(keypoints)
     
     if len(sequence) == 30:
