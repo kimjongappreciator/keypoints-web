@@ -2,7 +2,7 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-const socket = io("ws://localhost:5000"); // Use io instead of new WebSocket
+const socket = io("ws://192.168.1.38:5000"); // Use io instead of new WebSocket
 
 var frames = [];
 

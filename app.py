@@ -9,8 +9,7 @@ from flask_socketio import SocketIO
 from datetime import datetime
 import database as dbase
 from flask import request
-from flask import request
-from flask import request
+import os
 
 model = tf.keras.models.load_model('my_model3.keras')
 
@@ -42,8 +41,9 @@ def extract_keypoints(results):
     return np.concatenate([pose, face, right, left])
 
 def decode_image(img):
-    image_data = img.split(",")[1]
-    image_bytes = base64.b64decode(image_data)
+    #image_data = img.split(",")[1]
+    #image_bytes = base64.b64decode(image_data)
+    image_bytes = base64.b64decode(img)
     image_buffer = np.frombuffer(image_bytes, dtype=np.uint8)
     frame = cv2.imdecode(image_buffer, cv2.IMREAD_COLOR)
     return frame
@@ -65,9 +65,35 @@ threshold = 0.5
 def on_connect():
     print("Cliente conectado")
 
+@socketio.on("disconnect")
+def on_disconnect():
+    print("Cliente desconectado")
+
 @app.route("/")
 def index():
     return render_template("index.html")
+
+@app.route("/test", methods=["POST"])
+def test():
+    global sequence
+    data = request.get_json()
+    imgbase64 = data["frames"]
+    image_bytes = base64.b64decode(imgbase64)
+    #with open("received_image.jpg", "wb") as f:
+    #    f.write(image_bytes)
+    frame = decode_image(imgbase64)
+    image, results = mediapipe_detection(frame, holistic)
+    keypoints = extract_keypoints(results)
+    sequence.append(keypoints)
+
+    if len(sequence) == 30:
+        res = model.predict(np.expand_dims(sequence, axis=0))[0]
+        prediction = actions[np.argmax(res)]
+        print(prediction)
+        socketio.emit("prediction", {"prediction": prediction})
+        sequence = []
+    
+    return jsonify({"message": "Imagen recibida"})
 
 @app.route("/write", methods=["POST"])
 def add_translation():
@@ -84,9 +110,13 @@ def get_translations():
         datos.append(res)
     return jsonify({"translations": datos})
 
+@socketio.on("prueba")
+def on_prueba(data):
+    print('prueba ', data);
+
+
 @socketio.on("message")
-def on_message(data):   
-   
+def on_message(data):       
     global sequence
     #print(data["frames"])
     image_base64 = data["frames"]
@@ -104,9 +134,9 @@ def on_message(data):
         #print(sequence[1])
         res = model.predict(np.expand_dims(sequence, axis=0))[0]
         prediction = actions[np.argmax(res)]
+        print(prediction)
         socketio.emit("prediction", {"prediction": prediction})
         sequence = []
-
    
 if __name__ == "__main__":
-    socketio.run(app, host="localhost", port=5000, allow_unsafe_werkzeug=True)
+    socketio.run(app, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True)
