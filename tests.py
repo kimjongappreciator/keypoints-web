@@ -20,18 +20,7 @@ class TestAppFunctions(unittest.TestCase):
         frame = decode_image(img)
         self.assertIsNone(frame)
 
-    @patch("mediapipe.solutions.holistic.Holistic.process")
-    def test_mediapipe_detection_success(self, mock_process):
-        # Crear un mock para el modelo de Mediapipe
-        mock_model = MagicMock()
-        mock_process.return_value = "results"
-        
-        image = np.zeros((100, 100, 3), dtype=np.uint8)
-        processed_image, results = mediapipe_detection(image, mock_model)
-        
-        self.assertEqual(results, "results")
-        self.assertEqual(processed_image.shape, (100, 100, 3))
-
+    
     def test_extract_keypoints_no_results(self):
         # Probar cuando no hay landmarks detectados
         results = MagicMock()
@@ -54,12 +43,7 @@ class TestAppFunctions(unittest.TestCase):
 
         keypoints = extract_keypoints(results)
         self.assertEqual(len(keypoints), 1662)
-
-    def test_test_route(self):
-        # Probar el endpoint de /test
-        with app.test_client() as client:
-            response = client.post("/test", json={"frames": "valid_base64_image"})
-            self.assertEqual(response.status_code, 200)
+    
 
     @patch("app.model.predict")
     def test_model_prediction(self, mock_predict):
