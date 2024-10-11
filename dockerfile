@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
 
 COPY my_model3.keras .
 
-COPY templates .
+COPY templates ./templates
 
 COPY database.py .
 
