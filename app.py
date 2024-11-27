@@ -95,34 +95,9 @@ def on_disconnect():
 def index():
     return render_template("index.html")
 
-@app.route("/test", methods=["POST"])
+@app.route("/test", methods=["GET"])
 def test():
-    global sequence
-    try:
-        data = request.get_json()
-        imgbase64 = data["frames"]
-        frame = decode_image(imgbase64)
-
-        if frame is None:
-            return jsonify({"error": "Error al decodificar la imagen"}), 400
-        
-        image, results = mediapipe_detection(frame, holistic)
-        if results is None:
-            return jsonify({"error": "Error en la detección de Mediapipe"}), 400
-
-        keypoints = extract_keypoints(results)
-        sequence.append(keypoints)
-
-        if len(sequence) == 30:
-            res = model.predict(np.expand_dims(sequence, axis=0))[0]
-            prediction = actions[np.argmax(res)]
-            print(prediction)
-            socketio.emit("prediction", {"prediction": prediction})
-            sequence = []
-        return jsonify({"message": "Imagen recibida"})
-    except Exception as e:
-        print(f"Error en el endpoint /test: {e}")
-        return jsonify({"error": "Ocurrió un error"}), 500
+    return jsonify({"message": "Funcionando correctamente"}),200
 
 @app.route("/write", methods=["POST"])
 def add_translation():
