@@ -64,7 +64,7 @@ def decode_image(img):
         print(f"Error al decodificar la imagen: {e}")
         return None
 
-holistic = mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+holistic = mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5, static_image_mode=True)
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -82,14 +82,20 @@ frames = []
 sequence = []
 predictions = []
 threshold = 0.5
+# Manejo de secuencias por cliente
+client_sequences = {}
 
 @socketio.on("connect")
 def on_connect():
-    print("Cliente conectado")
+    sid = request.sid  # Identificador único del cliente
+    client_sequences[sid] = []  # Inicializar la secuencia del cliente
+    print(f"Cliente conectado: {sid}")
 
-@socketio.on("disconnect")
 def on_disconnect():
-    print("Cliente desconectado")
+    sid = request.sid
+    if sid in client_sequences:
+        del client_sequences[sid]  # Eliminar la secuencia del cliente al desconectar
+    print(f"Cliente desconectado: {sid}")
 
 @app.route("/")
 def index():
@@ -129,30 +135,34 @@ def get_translations():
         return jsonify({"error": "Ocurrió un error"}), 500
 
 @socketio.on("message")
-def on_message(data):       
-    global sequence
+def on_message(data):
+    sid = request.sid  # Identificador único del cliente    
+    if sid not in client_sequences:
+        client_sequences[sid] = []  # Asegurar que exista una lista para el cliente
+
     try:
+        print(data["frames"])
         image_base64 = data["frames"]
         frame = decode_image(image_base64)
 
         if frame is None:
             print("Error al decodificar la imagen")
             return
-        
+
         image, results = mediapipe_detection(frame, holistic)
         if results is None:
             print("Error en la detección de Mediapipe")
             return
 
         keypoints = extract_keypoints(results)
-        sequence.append(keypoints)
-        
-        if len(sequence) == 30:
-            res = model.predict(np.expand_dims(sequence, axis=0))[0]
+        client_sequences[sid].append(keypoints)
+
+        if len(client_sequences[sid]) == 30:
+            res = model.predict(np.expand_dims(client_sequences[sid], axis=0))[0]
             prediction = actions[np.argmax(res)]
-            print(prediction)
-            socketio.emit("prediction", {"prediction": prediction})
-            sequence = []
+            print(f"Predicción para {sid}: {prediction}")
+            socketio.emit("prediction", {"prediction": prediction}, to=sid)
+            client_sequences[sid] = []  # Reiniciar la secuencia del cliente
     except Exception as e:
         print(f"Error en la función on_message: {e}")
 
