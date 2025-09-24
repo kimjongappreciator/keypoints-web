@@ -2,7 +2,9 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-const socket = io("ws://192.168.1.38:5000"); // Use io instead of new WebSocket
+// client test script, real implementation runs on flutter app
+
+const socket = io("ws://192.168.1.38:5000");
 
 var frames = [];
 
@@ -28,7 +30,7 @@ navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
     ctx.drawImage(video, 0, 0);
     const imageData = canvas.toDataURL("image/jpeg");
     
-    socket.emit("message", {"frames": imageData}); // Use emit instead of send
+    socket.emit("message", {"frames": imageData});
 
     
   }, 100);

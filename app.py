@@ -9,7 +9,6 @@ from datetime import datetime
 import database as dbase
 import os
 
-# Manejo de errores en la carga del modelo
 try:
     model = tf.keras.models.load_model('my_model3.keras')
 except Exception as e:
@@ -52,7 +51,7 @@ def extract_keypoints(results):
         return np.concatenate([pose, face, right, left])
     except Exception as e:
         print(f"Error en extract_keypoints: {e}")
-        return np.zeros(1662)  # Tamaño total de los keypoints en caso de error
+        return np.zeros(1662)  # 1662 = 132 + 1404 + 63 + 63 
 
 def decode_image(img):
     try:
@@ -70,7 +69,6 @@ app = Flask(__name__)
 socketio = SocketIO(app)
 socketio.init_app(app, cors_allowed_origins="*")
 
-# Manejo de errores en la conexión a la base de datos
 try:
     db = dbase.dbConnection()
     collection = db["translation_log"]
@@ -82,19 +80,19 @@ frames = []
 sequence = []
 predictions = []
 threshold = 0.5
-# Manejo de secuencias por cliente
+
 client_sequences = {}
 
 @socketio.on("connect")
 def on_connect():
-    sid = request.sid  # Identificador único del cliente
-    client_sequences[sid] = []  # Inicializar la secuencia del cliente
+    sid = request.sid  # Id Cliente
+    client_sequences[sid] = []  
     print(f"Cliente conectado: {sid}")
 
 def on_disconnect():
     sid = request.sid
     if sid in client_sequences:
-        del client_sequences[sid]  # Eliminar la secuencia del cliente al desconectar
+        del client_sequences[sid]  
     print(f"Cliente desconectado: {sid}")
 
 @app.route("/")
@@ -136,9 +134,9 @@ def get_translations():
 
 @socketio.on("message")
 def on_message(data):
-    sid = request.sid  # Identificador único del cliente    
+    sid = request.sid  
     if sid not in client_sequences:
-        client_sequences[sid] = []  # Asegurar que exista una lista para el cliente
+        client_sequences[sid] = []  
 
     try:
         print(data["frames"])
@@ -162,7 +160,7 @@ def on_message(data):
             prediction = actions[np.argmax(res)]
             print(f"Predicción para {sid}: {prediction}")
             socketio.emit("prediction", {"prediction": prediction}, to=sid)
-            client_sequences[sid] = []  # Reiniciar la secuencia del cliente
+            client_sequences[sid] = [] 
     except Exception as e:
         print(f"Error en la función on_message: {e}")
 

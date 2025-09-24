@@ -7,22 +7,19 @@ from app import mediapipe_detection, decode_image, extract_keypoints, app
 
 class TestAppFunctions(unittest.TestCase):
 
-    def test_decode_image_success(self):
-        # Simular una imagen en base64
+    def test_decode_image_success(self):        
         img = base64.b64encode(cv2.imencode('.jpg', np.zeros((100, 100, 3), dtype=np.uint8))[1]).decode('utf-8')
         frame = decode_image(img)
         self.assertIsNotNone(frame)
         self.assertEqual(frame.shape, (100, 100, 3))
 
-    def test_decode_image_failure(self):
-        # Probar con una entrada inválida
+    def test_decode_image_failure(self):        
         img = "invalid_base64"
         frame = decode_image(img)
         self.assertIsNone(frame)
 
     
-    def test_extract_keypoints_no_results(self):
-        # Probar cuando no hay landmarks detectados
+    def test_extract_keypoints_no_results(self):        
         results = MagicMock()
         results.pose_landmarks = None
         results.right_hand_landmarks = None
@@ -33,8 +30,7 @@ class TestAppFunctions(unittest.TestCase):
         self.assertEqual(len(keypoints), 1662)
         self.assertTrue(np.all(keypoints == 0))
 
-    def test_extract_keypoints_with_landmarks(self):
-        # Probar cuando hay landmarks válidos
+    def test_extract_keypoints_with_landmarks(self):        
         results = MagicMock()
         results.pose_landmarks.landmark = [MagicMock(x=1, y=2, z=3, visibility=0.9)] * 33
         results.right_hand_landmarks.landmark = [MagicMock(x=1, y=2, z=3)] * 21
@@ -47,11 +43,11 @@ class TestAppFunctions(unittest.TestCase):
 
     @patch("app.model.predict")
     def test_model_prediction(self, mock_predict):
-        mock_predict.return_value = np.array([[0.1, 0.9]])  # Simular una predicción
-        sequence = [np.zeros(1662)] * 30  # Simular una secuencia completa de keypoints
+        mock_predict.return_value = np.array([[0.1, 0.9]])
+        sequence = [np.zeros(1662)] * 30 # 30 frames = max sequence length
         res = mock_predict(np.expand_dims(sequence, axis=0))[0]
         prediction = np.argmax(res)
-        self.assertEqual(prediction, 1)  # Simular que predice la segunda acción
+        self.assertEqual(prediction, 1)
 
 if __name__ == '__main__':
     unittest.main()
